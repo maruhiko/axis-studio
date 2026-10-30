@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="description" content="ブラウザだけで使える3Dモデルビュワー。回転・移動・拡大縮小ギズモ、数値入力、視点変更、GLB書き出しに対応。" />
+  <title>Axis Studio — 3D Model Viewer</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <svg class="svg-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-cube" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5ZM3 7v10l9 5V12M21 7v10l-9 5"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-move" viewBox="0 0 24 24"><path d="m12 2 3 3-3-3-3 3M12 2v20m0 0 3-3m-3 3-3-3M2 12l3-3m-3 3 3 3M2 12h20m0 0-3-3m3 3-3 3"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 11a9 9 0 0 1 15-6l2 2M20 3v4h-4M21 13a9 9 0 0 1-15 6l-2-2M4 21v-4h4"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M4 10V4h6M4 4l7 7M20 14v6h-6m6 0-7-7M15 4h5v5M4 15v5h5"/></symbol>
+    <symbol id="i-orbit" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-27 12 12)"/><circle cx="17.5" cy="9" r="2"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></symbol>
+    <symbol id="i-axis" viewBox="0 0 24 24"><path d="M5 19V5M5 19h14M5 19l10-10M5 5l-2 3m2-3 2 3m12 14-3-3m3 3-3 2"/></symbol>
+    <symbol id="i-frame" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7h4l2-3h4l2 3h4a2 2 0 0 1 2 2v10H2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 17v4h16v-4"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 3 7M3 4v7h7"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 11v6m0-10v.5"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4m0 4v.5"/></symbol>
+    <symbol id="i-cross" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5m5 5H10a6 6 0 0 0 0 12h2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5m18 8v5h-5M3 16v5h5m13-13V3h-5"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></symbol>
+  </svg>
+
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="brand" aria-label="Axis Studio">
+        <div class="brand-mark"><svg class="icon"><use href="#i-cube"/></svg></div>
+        <div class="brand-words"><span class="brand-name">AXIS<span class="brand-dot">.</span>STUDIO</span><span class="brand-caption">3D MODEL WORKSPACE</span></div>
+      </div>
+      <div class="header-divider"></div>
+      <div class="project-breadcrumb"><span class="muted">WORKSPACE</span><span class="crumb-sep">/</span><strong id="projectName">Demo · Orbit Bot</strong><span class="topbar-status">● LOCAL</span></div>
+      <div class="header-actions">
+        <button class="btn btn-subtle header-help" id="helpButton" title="操作方法"><svg class="icon"><use href="#i-help"/></svg><span>操作方法</span></button>
+        <button class="btn btn-subtle" id="screenshotButton" title="PNG画像を書き出す"><svg class="icon"><use href="#i-camera"/></svg><span class="hide-narrow">スクリーンショット</span></button>
+        <button class="btn btn-primary" id="openButton"><svg class="icon"><use href="#i-folder"/></svg><span>モデルを開く</span></button>
+        <button class="icon-button mobile-inspector-btn" id="mobileInspectorButton" aria-label="インスペクターを開く"><svg class="icon"><use href="#i-menu"/></svg></button>
+      </div>
+    </header>
+
+    <div class="workarea">
+      <nav class="toolrail" aria-label="操作ツール">
+        <div class="rail-top">
+          <span class="rail-caption">TOOLS</span>
+          <button class="rail-tool" data-mode="orbit" title="視点操作（Q）" aria-label="視点操作"><svg class="icon"><use href="#i-orbit"/></svg></button>
+          <div class="rail-divider"></div>
+          <button class="rail-tool active" data-mode="translate" title="移動ギズモ（W）" aria-label="移動"><svg class="icon"><use href="#i-move"/></svg></button>
+          <button class="rail-tool" data-mode="rotate" title="回転ギズモ（E）" aria-label="回転"><svg class="icon"><use href="#i-rotate"/></svg></button>
+          <button class="rail-tool" data-mode="scale" title="スケールギズモ（R）" aria-label="拡大縮小"><svg class="icon"><use href="#i-scale"/></svg></button>
+          <div class="rail-divider"></div>
+          <button class="rail-tool" id="frameButton" title="モデル全体を表示（F）" aria-label="全体表示"><svg class="icon"><use href="#i-frame"/></svg></button>
+        </div>
+        <div class="rail-bottom">
+          <button class="rail-tool" id="undoButton" title="元に戻す（Ctrl+Z）" aria-label="元に戻す" disabled><svg class="icon"><use href="#i-undo"/></svg></button>
+          <button class="rail-tool" id="redoButton" title="やり直す（Ctrl+Shift+Z）" aria-label="やり直す" disabled><svg class="icon"><use href="#i-redo"/></svg></button>
+          <button class="rail-tool" id="railHelpButton" title="ショートカット" aria-label="ヘルプ"><svg class="icon"><use href="#i-help"/></svg></button>
+        </div>
+      </nav>
+
+      <main class="viewport-shell" id="viewportShell">
+        <div id="canvasHost" class="canvas-host" aria-label="3Dモデル表示領域"></div>
+        <div class="viewport-shading"></div>
+        <div class="view-top-left">
+          <div class="viewport-label"><span class="viewport-label-dot"></span><span>SCENE VIEW</span><span class="label-slash">/</span><span id="projectionLabel">PERSPECTIVE</span></div>
+          <div class="top-inline-actions">
+            <button class="mini-icon-button" id="projectionButton" title="透視／平行投影を切り替え"><svg class="icon"><use href="#i-cube"/></svg><span id="projectionToggleText">透視</span></button>
+            <span class="inline-separator"></span>
+            <button class="mini-icon-button" id="viewResetButton" title="標準視点に戻す"><svg class="icon"><use href="#i-reset"/></svg></button>
+          </div>
+        </div>
+        <div class="axis-widget-box"><span class="axis-widget-label">VIEW AXIS</span><div id="axisWidget" class="axis-widget" title="軸をクリックするとその方向から表示"></div></div>
+        <div class="viewport-bottom-left">
+          <div class="canvas-controls">
+            <button class="canvas-control active" id="gridButton" title="グリッドの表示（G）" aria-pressed="true"><svg class="icon"><use href="#i-grid"/></svg><span>Grid</span></button>
+            <button class="canvas-control active" id="axesButton" title="座標軸の表示" aria-pressed="true"><svg class="icon"><use href="#i-axis"/></svg><span>Axes</span></button>
+            <button class="canvas-control" id="wireframeButton" title="ワイヤーフレーム表示" aria-pressed="false"><svg class="icon"><use href="#i-eye"/></svg><span>Wire</span></button>
+          </div>
+          <div class="viewport-hint">左ドラッグ 回転 <span>·</span> 右ドラッグ 移動 <span>·</span> ホイール 拡大縮小</div>
+        </div>
+        <div class="viewport-bottom-right"><button class="fit-chip" id="bottomFrameButton"><svg class="icon"><use href="#i-frame"/></svg> 全体表示 <kbd>F</kbd></button></div>
+        <div id="dropOverlay" class="drop-overlay" aria-hidden="true"><div class="drop-target"><svg class="icon"><use href="#i-cube"/></svg><strong>モデルをドロップ</strong><span>GLB / GLTF / OBJ / STL</span></div></div>
+        <div class="loading-overlay" id="loadingOverlay" hidden><div class="spinner"></div><strong>モデルを読み込み中...</strong></div>
+        <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+      </main>
+
+      <aside class="inspector" id="inspector" aria-label="インスペクター">
+        <div class="inspector-titlebar"><div><span class="eyebrow">PROPERTIES</span><h2>Inspector</h2></div><button class="icon-button mobile-inspector-close" id="mobileInspectorClose" aria-label="閉じる"><svg class="icon"><use href="#i-cross"/></svg></button><div class="inspector-title-icon"><svg class="icon"><use href="#i-cube"/></svg></div></div>
+        <div class="inspector-scroll">
+          <section class="object-card"><div class="object-thumbnail"><svg class="icon"><use href="#i-cube"/></svg></div><div class="object-desc"><strong id="objectName" title="現在のモデル">Orbit Bot</strong><span id="objectFormat">PROCEDURAL SAMPLE</span></div><div class="object-visible" title="モデルを表示中"><svg class="icon"><use href="#i-eye"/></svg></div></section>
+
+          <section class="inspector-section">
+            <div class="section-heading"><div><span class="section-indicator"></span><h3>Transform</h3></div><button class="section-icon-button" id="resetTransformButton" title="位置・回転・スケールを初期化"><svg class="icon"><use href="#i-reset"/></svg></button></div>
+            <div class="transform-heading-row"><span>POSITION</span><span>UNIT</span></div>
+            <div class="vec3-field" data-property="position"><label class="axis-field axis-x"><span>X</span><input type="number" step="0.1" data-property="position" data-axis="x" value="0" aria-label="位置 X" /></label><label class="axis-field axis-y"><span>Y</span><input type="number" step="0.1" data-property="position" data-axis="y" value="0" aria-label="位置 Y" /></label><label class="axis-field axis-z"><span>Z</span><input type="number" step="0.1" data-property="position" data-axis="z" value="0" aria-label="位置 Z" /></label></div>
+            <div class="transform-heading-row"><span>ROTATION</span><span>DEGREES °</span></div>
+            <div class="vec3-field" data-property="rotation"><label class="axis-field axis-x"><span>X</span><input type="number" step="1" data-property="rotation" data-axis="x" value="0" aria-label="回転 X 度" /></label><label class="axis-field axis-y"><span>Y</span><input type="number" step="1" data-property="rotation" data-axis="y" value="0" aria-label="回転 Y 度" /></label><label class="axis-field axis-z"><span>Z</span><input type="number" step="1" data-property="rotation" data-axis="z" value="0" aria-label="回転 Z 度" /></label></div>
+            <div class="transform-heading-row"><span>SCALE</span><span>FACTOR</span></div>
+            <div class="vec3-field" data-property="scale"><label class="axis-field axis-x"><span>X</span><input type="number" step="0.1" data-property="scale" data-axis="x" value="1" aria-label="スケール X" /></label><label class="axis-field axis-y"><span>Y</span><input type="number" step="0.1" data-property="scale" data-axis="y" value="1" aria-label="スケール Y" /></label><label class="axis-field axis-z"><span>Z</span><input type="number" step="0.1" data-property="scale" data-axis="z" value="1" aria-label="スケール Z" /></label></div>
+            <div class="transform-footer"><button class="text-action" id="copyTransformButton"><svg class="icon"><use href="#i-copy"/></svg> 変換値をコピー</button><button class="text-action" id="pasteTransformButton" title="クリップボードの変換JSONを読み込み">貼り付け</button></div>
+          </section>
+
+          <section class="inspector-section compact-section"><div class="section-heading"><div><span class="section-indicator secondary"></span><h3>Gizmo settings</h3></div></div><div class="setting-row"><span>座標系</span><div class="segmented" id="spaceSegment"><button class="active" data-space="world">World</button><button data-space="local">Local</button></div></div><div class="setting-row"><span>スナップ</span><label class="switch"><input type="checkbox" id="snapCheck" /><span class="switch-track"></span></label></div><div class="setting-subtext">有効時：移動 0.25 / 回転 15° / 拡大 0.1</div></section>
+
+          <section class="inspector-section compact-section"><div class="section-heading"><div><span class="section-indicator secondary"></span><h3>Display</h3></div></div><div class="setting-row"><span>背景</span><select id="backgroundSelect" class="setting-select"><option value="dark">Dark Studio</option><option value="slate">Slate</option><option value="light">Light</option></select></div><div class="setting-row"><span>自動回転</span><label class="switch"><input type="checkbox" id="autoRotateCheck" /><span class="switch-track"></span></label></div></section>
+
+          <section class="inspector-section compact-section" id="animationSection" hidden><div class="section-heading"><div><span class="section-indicator secondary"></span><h3>Animation</h3></div></div><div class="animation-row"><select class="setting-select animation-select" id="animationSelect" aria-label="アニメーションを選択"></select><button class="icon-button animation-play" id="playAnimationButton" title="再生／一時停止"><svg class="icon"><use href="#i-pause"/></svg></button></div><div class="setting-subtext">GLTF / GLB のアニメーションに対応</div></section>
+
+          <section class="inspector-section compact-section"><div class="section-heading"><div><span class="section-indicator secondary"></span><h3>Model info</h3></div></div><div class="stats-grid"><div class="stat-tile"><span>MESHES</span><strong id="meshStat">—</strong></div><div class="stat-tile"><span>TRIANGLES</span><strong id="triangleStat">—</strong></div><div class="stat-tile"><span>VERTICES</span><strong id="vertexStat">—</strong></div><div class="stat-tile"><span>FILE SIZE</span><strong id="filesizeStat">—</strong></div></div><div class="dimension-row"><span>サイズ (X × Y × Z)</span><strong id="dimensionsStat">—</strong></div></section>
+
+          <div class="sidebar-bottom-actions"><button class="btn btn-secondary full-button" id="exportGlbButton"><svg class="icon"><use href="#i-download"/></svg> GLBで書き出す</button><button class="btn btn-outline full-button" id="demoButton">デモモデルに戻す</button><p class="privacy-note"><svg class="icon"><use href="#i-check"/></svg> モデルはサーバーに送信されません</p></div>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="statusbar"><div class="status-left"><span class="status-light"></span><span id="statusMessage">READY</span><span class="status-divider"></span><span id="statusModel">Orbit Bot</span></div><div class="status-right"><span class="status-desktop">WEBGL <span class="status-value" id="rendererInfo">—</span></span><span class="status-divider status-desktop"></span><span>THREE.JS</span><span class="build-version">v1.0</span></div></footer>
+  </div>
+
+  <input type="file" id="fileInput" accept=".glb,.gltf,.obj,.stl,.bin,.png,.jpg,.jpeg,.webp,.ktx2" multiple hidden />
+  <div class="mobile-shade" id="mobileShade"></div>
+  <dialog class="help-dialog" id="helpDialog" aria-labelledby="helpTitle"><div class="dialog-header"><div><span class="eyebrow">QUICK GUIDE</span><h2 id="helpTitle">操作ガイド</h2></div><button class="icon-button" id="helpCloseButton" aria-label="閉じる"><svg class="icon"><use href="#i-cross"/></svg></button></div><div class="help-body"><p>モデルをドラッグ＆ドロップするか「モデルを開く」から読み込めます。GLTF の外部画像や BIN がある場合、すべて一緒に選択してください。</p><div class="help-list"><div><kbd>左ドラッグ</kbd><span>カメラを回転（ギズモ以外）</span></div><div><kbd>右ドラッグ</kbd><span>カメラを平行移動</span></div><div><kbd>ホイール</kbd><span>ズーム</span></div><div><kbd>W / E / R</kbd><span>移動 / 回転 / 拡大縮小ギズモ</span></div><div><kbd>Q</kbd><span>ギズモを非表示・視点操作</span></div><div><kbd>F</kbd><span>モデル全体を表示</span></div><div><kbd>G</kbd><span>グリッドの表示切替</span></div><div><kbd>Ctrl + Z</kbd><span>変換の取り消し</span></div><div><kbd>Ctrl + Shift + Z</kbd><span>変換のやり直し</span></div></div><p class="help-footer">右上の座標軸をクリックすると正面・背面・左右・上下からの視点に切り替わります。数値入力は角度「°」単位で、回転順序は XYZ です。</p></div></dialog>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
